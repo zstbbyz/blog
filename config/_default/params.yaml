@@ -23,15 +23,15 @@ scheme: Gemini
 
 # 开启暗模式
 # Dark Mode
-darkmode: true
+darkmode: false
 
 
 # 站点基本信息
 # Site Information Settings
-author: NexT 主题
-subtitle: 为 Hugo 打造的主题
-description: 保持简单的易用性和强大的功能。
-keywords: Hugo,NexT,主题,简单,强大
+author: 酸橘子
+subtitle: 好好学习，天天向上
+#description:  
+#keywords: Hugo,NexT,主题,简单,强大
 
 # 不同尺寸站点图标
 # Different size of favicon
@@ -98,7 +98,7 @@ menuSets:
 sidebar:
   # 侧边栏位置，可选： left | right
   # Sidebar Position: left | right
-  position: left
+  position: right
 
   # 自定义侧边栏的宽度，默认配置如下
   # Muse | Mist: 320
@@ -134,13 +134,13 @@ sidebar:
 avatar:
   # 设置显示头像的相对路径
   # Replace the default image and set the url here.
-  url: /imgs/hugo_next_avatar.png
+  url: /imgs/avatar.jpg
   # 开启头像的圆形显示效果
   # If true, the avatar will be displayed in circle.
-  rounded: true
+  rounded: false
   # 开启头像随鼠标转动动画
   # If true, the avatar will be rotated with the cursor.
-  rotated: true
+  rotated: false
 siteState: 
   # 是否在侧边栏显示文章、分类、标签信息
   # Posts / Categories / Tags in sidebar.
@@ -148,7 +148,7 @@ siteState:
   # 站点访问信息
   # Site information
   views: 
-    enable: true
+    enable: false
     # 组件类型，可选值为： 51la, busuanzi
     # 使用51la时需要注册账号：https://invite.51.la/1NUfGTS1?target=V6
     # Plguin value is: 51la, busuzazi
@@ -162,9 +162,9 @@ siteState:
 # Key is the link label order.
 # Value before `||` delimiter is the target permalink, value after `||` delimiter is the name of Font Awesome icon.
 socials: 
-  social0: Github || https://github.com/elkan1788 || fab fa-github
+  #social0: Github || https://github.com/elkan1788 || fab fa-github
   #social1: E-Mail || mailto:yourname@gmail.com || fa fa-envelope
-  social2: 知乎 || https://www.zhihu.com/people/lisenhui || fa fa-book
+  #social2: 知乎 || https://www.zhihu.com/people/lisenhui || fa fa-book
   #Google: https://plus.google.com/yourname || fab fa-google
   #Twitter: https://twitter.com/yourname || fab fa-twitter
   #FB Page: https://www.facebook.com/yourname || fab fa-facebook
@@ -205,8 +205,8 @@ linksSets:
 # Links of your friends
 # Usage: `Key: name || permalink`
 links: 
-  link0: Hugo-NexT || https://gitee.com/hugo-next/hugo-theme-next
-  link1: 凡梦星尘空间站 || https://lisenhui.cn
+  #link0: Hugo-NexT || https://gitee.com/hugo-next/hugo-theme-next
+  #link1: 凡梦星尘空间站 || https://lisenhui.cn
 
 # 文章目录显示
 # Table of Contents in the Sidebar
@@ -236,11 +236,11 @@ toc:
 footer:
   # 启动谷歌翻译功能
   # Enable google translate in footer
-  translate: true
+  translate: false
   # 站点开始年份，默认为当下时间的年份
   # Specify the year when the site was setup. 
   # If not defined, current year will be used.
-  since: 2010
+  since: 2023
 
   # 年份和版权信息之间的图标
   # Icon between year and copyright info.
@@ -261,13 +261,13 @@ footer:
 
   # 显示 Hugo 和 NexT 支持
   # Powered by Hugo & NexT
-  powered: true
+  powered: false
 
   # 国内 ICP 备案和公安网备信息
   # Beian ICP and gongan information for Chinese users. 
   # See: https://beian.miit.gov.cn, http://www.beian.gov.cn
   beian:
-    enable: true
+    enable: false
     # ICP 备案的具体信息
     icp: 粤ICP备 18047355-1 号
     # 公安网备的省份简称
@@ -278,7 +278,7 @@ footer:
   # 站点支持供应商列表
   # Vendors list who support website. 
   vendors:
-    enable: true
+    enable: false
     # 支持说明
     # Some support information description.
     title: 提供CDN/云资源支持
@@ -335,7 +335,7 @@ postMeta:
       plugin: waline
     # 是否开启页面访问数显示
     views:
-      enable: true
+      enable: false
       # 页面访问统计插件，支持busuanzi, waline, leancloud
       # Page views counter plugin, support: busuanzi, waline, leancloud
       plugin: busuanzi
@@ -357,7 +357,7 @@ rewardSets:
   # 是否开启捐赠按钮，开启后将在每个文章页面底部显示
   # If true, a donate button will be displayed 
   # in every article by default.
-  enable: true
+  enable: false
   # 是否开启捐赠方式的动画效果
   # If true, the donate type title will with animation.
   animation: true
@@ -369,8 +369,8 @@ rewardSets:
   # Donate type
   # Usage: `name:image url`
   reward:
-    wechatpay: /imgs/wechat-pay.png
-    alipay: /imgs/ali-pay.png
+    #wechatpay: /imgs/wechat-pay.png
+    #alipay: /imgs/ali-pay.png
     #paypal: /images/paypal.png
     #bitcoin: /images/bitcoin.png
 
@@ -381,14 +381,14 @@ rewardSets:
 followMe:
   #channel0: Twitter || https://twitter.com/username || fab fa-twitter
   #channel1: Telegram || https://t.me/channel_name || fab fa-telegram
-  channel2: WeChat || /images/wechat_channel.jpg || fab fa-weixin
-  channel3: RSS || /atom.xml || fa fa-rss
+  #channel2: WeChat || /images/wechat_channel.jpg || fab fa-weixin
+  #channel3: RSS || /atom.xml || fa fa-rss
 
 # 文章的在线编辑
 # Post edit
 # Easily browse and edit blog source code online.
 postEdit:
-  enable: true
+  enable: false
   url: https://github.com/user-name/repo-name/tree/branch-name/subdirectory-name/
 
 
@@ -468,7 +468,7 @@ readingProgress:
 bookmark:
   # 开启书签功能
   # If true, will display bookmark in all page.
-  enable: true
+  enable: false
   # 自定义书签显示颜色
   # Customize the color of the bookmark.
   color: "#222"
@@ -484,7 +484,7 @@ bookmark:
 githubBanner:
   # 是否开启显示
   # If true, will display banner.
-  enable: true
+  enable: false
   # 你的 Github 仓库地址
   # Your repository url on Github.
   permalink: https://github.com/hugo-next
@@ -639,7 +639,7 @@ quicklink:
 comments:
   # 开启评论组件
   # If true, will show comment component in post end.
-  enable: true   
+  enable: false
   # 设置默认使用的评论插件
   # 可选值：livere | waline | utterances | artalk | giscus
   # Choose a comment system to be displayed by default.
@@ -892,13 +892,13 @@ tabs:
 # So, you have to install the dependency of pdf.js if you want to use pdf tag and make it available to all browsers.
 # Dependencies: https://github.com/next-theme/theme-next-pdf
 pdf:
-  enable: false
+  enable: true
   # Default height
   height: 500px
 
 # Mermaid tag
 mermaid:
-  enable: false
+  enable: true
   # Available themes: default | dark | forest | neutral
   theme:
     light: default
