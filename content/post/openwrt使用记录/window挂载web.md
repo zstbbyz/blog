@@ -2,12 +2,12 @@
 share: true
 tags:
   - alist
-  - "#webdav"
+  - webdav
 title: window挂载web
-date:  2023-11-19 12:54:37
-update:  2023-11-19 12:19:22
+date: 2023-11-19 12:54:37
+update: 2023-11-19 01:00:52
 ---
-在 `Windows` 中使用 `webdav` 挂载 `Alist` 的时候，始终无法成功
+在 `Windows` 中使用 `webdav` 挂载 `Alist` 的时候，始终无法成功：
 
 ![](/images/IMG-window挂载web-20231119005454824.png)
 
