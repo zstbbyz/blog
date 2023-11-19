@@ -17,8 +17,9 @@ update: 2023-11-19 01:00:52
 
 该配置在注册表中对应的地址为：`计算机\HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\WebClient\Parameters`，找到 `BasicAuthLevel` 把值由 `1` 改为 `2`。
 
-![image-20230311101002963](https://git.mengqingpo.com:8888//fugary/blogpic/uploads/ab9e7b7d701010cf6e42a6f356fe3ea0/image-20230311101002963.png)
+
+![](/images/IMG-window挂载webdav-20231119130618610.png)
 
 之后重启 `WebClient` 服务即可：
 
-![image-20230311101203216](https://git.mengqingpo.com:8888//fugary/blogpic/uploads/ad6e819d374a5ac3c79441ac134193c3/image-20230311101203216.png)
+![](/images/IMG-window挂载webdav-20231119130651288.png)
