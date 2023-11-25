@@ -59,8 +59,3 @@ sudo apt-get install qemu-system-i386
 ![](/images/IMG-ucore实验环境搭建-20231125200343371.png)
 
 ![](/images/IMG-ucore实验环境搭建-20231125200343394.png)
-
-```python
-if a = 1:
-	print(12)
-```
