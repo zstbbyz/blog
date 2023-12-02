@@ -6,14 +6,14 @@ categories:
   - ucore实验
 title: ucore操作系统实验：lab1
 date: 2023-12-02 17:23:18
-update: 2023-12-02 18:01:34
+update: 2023-12-02 19:50:56
 ---
 
 ## 练习 1：理解通过 make 生成执行文件的过程
 
 ### 练习内容
 
-![](/images/IMG-ucore操作系统实验：lab1-20231202172824535.png)
+![](/images/ucore操作系统实验：lab1_image_1.png)
 
 ### 问题解答
 
@@ -23,9 +23,9 @@ update: 2023-12-02 18:01:34
 - `make clean` 清除掉上一次生成的文件
 - `make V=` 编译文件生成镜像
 
-![](/images/IMG-ucore操作系统实验：lab1-20231202173121440.png)
+![](/images/ucore操作系统实验：lab1_image_2.png)
 
-![](/images/IMG-ucore操作系统实验：lab1-20231202173203828.png)
+![](/images/ucore操作系统实验：lab1_image_3.png)
 
 执行 `make V=` 的过程中全部输出如下，它显示了整个过程中执行的所有命令：
 
@@ -127,19 +127,19 @@ dd if=bin/kernel of=bin/ucore.img seek=1 conv=notrunc
 
 引导扇区的大小为 512 字节，位于磁盘的第一个扇区，但是不是所有的磁盘都装有操作系统，所以统一规定将这 512 个字节的最后两个字节设置为标志位，取固定值 `0x55` 和 `0xAA`。
 
-![](/images/IMG-ucore操作系统实验：lab1-20231202173734720.png)
+![](/images/ucore操作系统实验：lab1_image_4.png)
 
 从实验文档中可以得知，`bin/sign` 是用来生成硬盘主引导扇区的程序，如果想从 `make` 的输出内容中看到这一步骤，可以对 `Makefile` 文件中 `bootblock` 部分进行修改。
 
-![](/images/IMG-ucore操作系统实验：lab1-20231202174754915.png)
+![](/images/ucore操作系统实验：lab1_image_5.png)
 
 修改后的内容如下：
 
-![](/images/IMG-ucore操作系统实验：lab1-20231202175203148.png)
+![](/images/ucore操作系统实验：lab1_image_6.png)
 
 这时候在执行 `make "V="` 命令，可以在输出看到多出了一部分内容，其中 `bin/sign obj/bootblock.out bin/bootblock` 就是利用 `bin/sign` 来构造引导扇区。
 
-![](/images/IMG-ucore操作系统实验：lab1-20231202175543162.png)
+![](/images/ucore操作系统实验：lab1_image_7.png)
 
 `bin/sign` 对应的源码位于 `tools/sigh.c` ，内容如下：
 
@@ -194,3 +194,79 @@ main(int argc, char *argv[]) {
 buf[510] = 0x55;
 buf[511] = 0xAA;
 ```
+
+## 练习 2：使用 qemu 执行并调试 lab1 中的软件
+
+### 练习内容
+
+![](/images/ucore操作系统实验：lab1_image_8.png)
+
+### 问题解答
+
+**问题 1：从 CPU 加电后执行的第一条指令开始，单步跟踪 BIOS 的执行**
+
+在项目目录下执行 `make gdb` 命令，可以看到启动了一个 `QEMU` 虚拟机，此时它正等待着 `gdb` 远程连接：
+
+![](/images/ucore操作系统实验：lab1_image_9.png)
+
+接下来使用 `gdb` 命令进行调试，输入 `set architecture i8086` 设置当前调试的机器为 `i8086`，输入 `target remote : 1234` 连接到 `QEMU`：
+
+![](/images/ucore操作系统实验：lab1_image_10.png)
+
+此时输入 `si` 则会开始执行一条命令：
+
+![](/images/ucore操作系统实验：lab1_image_11.png)
+
+**问题 2：在初始化位置 0x7c00 设置实地址断点, 测试断点正常**
+
+每次进行调试时都进行连接是比较麻烦的，可以将一些前置命令放在一个文件里，如下面的文件 `gdbinit`，每次使用 `gdb -x gdbinit` 命令启动 `gdb`，那么文件 `gdbinit` 中所用的命令都会被执行，之后都通过这种方式来执行。
+
+![](/images/ucore操作系统实验：lab1_image_12.png)
+
+![](/images/ucore操作系统实验：lab1_image_13.png)
+
+在 `gdbinit` 文件中输入如下内容，再次进行调试：
+
+```int
+set architecture i8086
+target remote:1234
+b *0x7c00 #设置点
+c     
+x/10i $pc #显示汇编指令
+```
+
+![](/images/ucore操作系统实验：lab1_image_14.png)
+
+**问题 3：从 0x7c00 开始跟踪代码运行，将单步跟踪反汇编得到的代码与 bootasm.S 和 bootblock.asm 进行比较**
+
+`boot/bootasm.S` 为源码文件， `obj/bootblock.asm` 为 `obj/bootblock.o` 反汇编后的文件。
+
+![](/images/ucore操作系统实验：lab1_image_7.png)
+
+比较两个两个文件中的内容和单步跟踪的输出内容，可以看到两者是差不多的：
+
+![](/images/ucore操作系统实验：lab1_image_15.png)
+
+
+![](/images/ucore操作系统实验：lab1_image_16.png)
+
+**问题 4：自己找一个 bootloader 或内核中的代码位置，设置断点并进行测试**
+
+这里选择使用 `kern/init/init.c` 中的 `kern_init` 函数作为断点：
+
+![](/images/ucore操作系统实验：lab1_image_17.png)
+
+将 `gdbinit` 文件修改为：
+
+```init
+set architecture i8086
+file bin/kernel
+target remote:1234
+b kern_init #设置点
+c     
+x/10i $pc #显示汇编指令
+```
+
+获得断点处的指令如下：
+
+![](/images/ucore操作系统实验：lab1_image_18.png)
