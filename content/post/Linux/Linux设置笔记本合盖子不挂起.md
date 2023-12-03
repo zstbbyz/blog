@@ -1,15 +1,16 @@
 ---
+categories: 
 share: true
 tags:
   - Linux
   - 笔记本
 title: Linux设置笔记本合盖子不挂起
 date: 2023-11-23 20:25:28
-update: 2023-11-23 20:28:23
+update: 2023-12-03 23:00:3207
 ---
 
 
-![](/images/IMG-Linux设置笔记本合盖子不挂起-20231123202813316.png)
+![](/images/Linux设置笔记本合盖子不挂起_image_1.png)
 
 要实现合上笔记本盖子后不挂起，可以修改 `/etc/systemd/logind.conf` 的内容，其中有三种不同类型的笔记本电脑合盖默认设置：
 

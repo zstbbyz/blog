@@ -6,7 +6,7 @@ categories:
   - ucore实验
 title: ucore操作系统实验：lab1
 date: 2023-12-02 17:23:18
-update: 2023-12-02 19:50:56
+update: 2023-12-03 22:32:15
 ---
 
 ## 练习 1：理解通过 make 生成执行文件的过程
@@ -270,3 +270,325 @@ x/10i $pc #显示汇编指令
 获得断点处的指令如下：
 
 ![](/images/ucore操作系统实验：lab1_image_18.png)
+
+
+## 练习 3：分析 bootloader 进入保护模式的过程
+
+### 练习内容
+
+![](/images/ucore操作系统实验：lab1_image_19.png)
+
+### 问题解答
+
+**问题 1：为何开启 A20，以及如何开启 A20**
+
+**A20 问题来源**
+
+> A20 指的是计算机中第 21 根地址总线。
+
+早期的 intel 8086 和 intel 8088 中有 20 根地址总线，理论上可以访问的地址空间大小为 $2^{20}=1M$ ,但由于该系列的 CPU 中只有 16 根数据总线，  所以实际上能够表示的地址范围仅为 0~64K 。
+
+为了可以访问到全部的 1M 内存空间，intel 采用了如下的地址计算方式：
+
+$$内存地址 = (段基地址 << 4) + 偏移量$$
+
+此时可以获得的最大地址为：
+
+$$
+\begin{equation}
+\begin{aligned}
+最大内存地址 &= 最大段基地址 << 4 + 最大偏移量 \\
+					& = FFFF << 4 + FFFF \\
+                      &= FFFF0 + FFFF \\
+                      &= 10FFEF \\
+                      & = 1M + 64KB -16B
+\end{aligned}
+\end{equation}
+$$
+
+可以看到在计算地址的过程中有可能会出现地址大于 1M 的越界现象，对于这些越界的地址（ 100000~10FFEF），intel 8086 和 intel 8088 会采用 wrap-around 技术来处理，直白点讲就是将地址对 1M 进行求模。
+
+CPU 发展到 intel 80286 时，地址总线变为了 24 根，能够访问的地址空间变为了 $2^{24}=16M$，之前的对于 intel 8086 和 intel 8088 而言的越界地址（ 100000~10FFEF），在 intel 80286 中已经不算越界了。不过为了兼容之前的 CPU，使系统表现的行为不发生变化，出现了 A20 Gate。
+- 当 A20 处于关闭状态时，第 21 一根地址总线的值总是 0，此时访问地址 100000~10FFEF 实际访问到的是 0~FFEF，  表现的如同在 intel 8086 和 intel 8088 中一样；
+- 当 A20 处于开启状态时，第 21 根地址总线的值既可以为 0 也可以为 1，那么就可以正常的访问 100000~10FFEF 这一段空间。  
+
+**实模式和实模式**
+
+实模式可以简单的理解为 Intel 80286 出现之前 CPU 的工作模式，它的特点是直接使用真实的物理地址访问内存，可使用的内存地址空间为 1M，对所有可寻址内存、I/O 地址和外设硬件的访问没有限制，不支持内存保护、多任务处理和特权级等。保护模式是 Intel 80286 之后出现的 CPU 的工作模式，与实模式最大区别是用逻辑地址代替了真实地址，可以采用分段存储管理机制和分页存储管理机制，不仅为存储共享和保护提供了硬件支持，而且为实现虚拟存储提供了硬件支持。同时保护模式下通过提供 4 个特权级和完善的特权检查机制，既能实现资源共享又能保证代码数据的安全及任务的隔离。
+
+因为 Intel 80286 之后的 CPU 是向前兼容的，所以它们本身都支持实模式，目前大部分计算机启动时也都是先在实模式下运行，之后再跳转到保护模式。
+
+**开启 A20 的原因**
+
+计算机在启动时首先运行在实模式，为了跟早先的 CPU 兼容，实模式下 A20 都处于关闭状态，此时如果不开启 A20，那么跳转到保护模式后，能访问到的真实物理内存只有 `0-1M`, `2-3M`, `4-5M` 等奇数内存，所以想要访问完整的内存空间必须开启 A20。
+
+**开启 A20 的方法**
+
+根据提示阅读 `lab1/boot/bootasm.S` ，其中开启 A20 的代码如下，在 ucore 实验中通过控制键盘控制器实现 A20 的开启。
+
+```asm
+seta20.1:
+    inb $0x64, %al           # 从0x64端口读取键盘控制器状态到al寄存器中
+    testb $0x2, %al          # 判断al寄存器第2为是否为1，如果是执行下一条指令
+    jnz seta20.1             # 跳转到seta20.1重新执行
+
+    movb $0xd1, %al          # 设置al寄存器的值为 0xd1
+    outb %al, $0x64          # 将al中的值写入0x64端口
+
+seta20.2:
+    inb $0x64, %al            # 从0x64端口读取键盘控制器状态到al寄存器中
+    testb $0x2, %al           # 判断al寄存器第2为是否为1，如果是执行下一条指令
+    jnz seta20.2              # 跳转到seta20.2重新执行
+
+    movb $0xdf, %al           # 设置al寄存器的值为 0xdf
+    outb %al, $0x60           # 将al中的值写入0x60端口
+```
+
+所以开启 A20 的整个步骤为：
+
+- 向键盘控制器的 `0x64` 端口发送的命令 `0xd1`，即代码段 `seta20.1` 完成的工作；
+- 向键盘控制器的 `0x60` 端口发送的命令 `0xdf`，即代码段 `seta20.2` 完成的工作；
+
+**问题 2：如何初始化 GDT 表**
+
+ucore 在 `lab1/boot/bootasm.S` 文件尾部定义 GDT 表，代码如下：
+
+```asm
+# Bootstrap GDT
+.p2align 2                                  # force 4 byte alignment
+gdt:
+    SEG_NULLASM                             # null seg
+    SEG_ASM(STA_X|STA_R, 0x0, 0xffffffff)   # code seg for bootloader and kernel
+    SEG_ASM(STA_W, 0x0, 0xffffffff)         # data seg for bootloader and kernel
+
+gdtdesc:
+    .word 0x17                              # sizeof(gdt) - 1
+    .long gdt                               # address gdt
+```
+
+其中 `gdt` 为 ucore 中构造出的 GDT ，`gdtdesc` 记录了 GDT 的长度和内存地址，在 `lab1/boot/bootasm.S` 中有如下这么一条指令，它的作用是将 `gdtdesc` 处的数据读取到全局描述符表寄存器 GDTR 中。
+
+```asm
+lgdt gdtdesc
+```
+
+
+**问题 3：如何使能和进入保护模式**
+
+在 CPU 中有一个 `CR0` 寄存器，包含了 6 个预定义标志，第 0 位是保护允许位 PE ( Protedted Enable )，用于启动保护模式，如果 PE 位置 1，则保护模式启动，如果 PE=0，则在实模式下运行。所以启动保护模式只需要将 `CR0` 寄存器第 0 位设为 1 即可，相关代码如下：
+
+```asm
+movl %cr0, %eax
+orl $CR0_PE_ON, %eax
+movl %eax, %cr0
+```
+
+
+## 练习 4：分析 bootloader 加载 ELF 格式的 OS 的过程
+
+### 练习内容
+
+![](/images/ucore操作系统实验：lab1_image_20.png)
+
+### 问题解答
+
+**问题 1：bootloader 如何读取硬盘扇区的**
+
+`bootmain.c` 中有如下代码片段，作用就是从磁盘中读取扇区，整个流程大致为：
+
+- 等待磁盘准备好
+- 发出读取扇区的命令
+- 等待磁盘准备好
+- 把磁盘扇区数据读到指定内存
+
+```c
+
+// 不断的读取磁盘状态，等待磁盘准备好
+static void waitdisk(void)
+{
+    while ((inb(0x1F7) & 0xC0) != 0x40)
+}
+
+// 读取secno处一个扇区到dst处
+static void readsect(void *dst, uint32_t secno)
+{
+    // 等待磁盘准备好
+    waitdisk();
+
+    // 像磁盘中的寄存器写入要读取的扇区总数，这里始终为1
+    outb(0x1F2, 1);
+
+    // 写入secno
+    outb(0x1F3, secno & 0xFF);
+    outb(0x1F4, (secno >> 8) & 0xFF);
+    outb(0x1F5, (secno >> 16) & 0xFF);
+    outb(0x1F6, ((secno >> 24) & 0xF) | 0xE0);
+
+    // 发起读命令
+    outb(0x1F7, 0x20); // cmd 0x20 - read sectors
+
+    // 等待磁盘准备好
+    waitdisk();
+
+    // 读取数据
+    insl(0x1F0, dst, SECTSIZE / 4);
+}
+```
+
+**问题 2：bootloader 是如何加载 ELF 格式的 OS**
+
+下面是 `bootloader` 中加载 os 的代码，主要步骤是将 ELF 文件头部读到内存中，根据头部获取其他段的位置和长度，并读取到内存指定位置，之后开始执行入口函数，操作系统正式被运行起来。
+
+```c
+void bootmain(void)
+{
+    // 将操作系统第一页读取到内存中，位置在ELFHDR处,
+    // SECTSIZE * 8 其中 SECTSIZE 大小为512字节一个扇区，8个扇区组成一页
+    readseg((uintptr_t)ELFHDR, SECTSIZE * 8, 0);
+
+    // 判断读取到的数据是否为一个合法的ELF，主要根据ELF头部判断
+    if (ELFHDR->e_magic != ELF_MAGIC)
+    {
+        goto bad;
+    }
+
+    struct proghdr *ph, *eph;
+
+    // 根据ELF头部的信息，将剩余部分读到内存中
+    ph = (struct proghdr *)((uintptr_t)ELFHDR + ELFHDR->e_phoff);
+    eph = ph + ELFHDR->e_phnum;
+    for (; ph < eph; ph++)
+    {
+        readseg(ph->p_va & 0xFFFFFF, ph->p_memsz, ph->p_offset);
+    }
+
+    // 根据ELF头部信息，执行入口函数
+    ((void (*)(void))(ELFHDR->e_entry & 0xFFFFFF))();
+
+bad:
+    outw(0x8A00, 0x8A00);
+    outw(0x8A00, 0x8E00);
+
+    /* do nothing */
+    while (1)
+        ;
+}
+```
+
+## 练习 5：实现函数调用堆栈跟踪函数
+
+### 练习内容
+
+![](/images/ucore操作系统实验：lab1_image_21.png)
+
+
+### 问题解答
+
+根据输出样例，我们可以知道在 `print_stackframe` 要做的的是把遍历当前的函数栈，并打印每个栈中的 `ebp`、`eip` 和函数中的参数。
+
+```c
+void
+print_stackframe(void) {
+     /* LAB1 YOUR CODE : STEP 1 */
+     /* (1) call read_ebp() to get the value of ebp. the type is (uint32_t);
+      * (2) call read_eip() to get the value of eip. the type is (uint32_t);
+      * (3) from 0 .. STACKFRAME_DEPTH
+      *    (3.1) printf value of ebp, eip
+      *    (3.2) (uint32_t)calling arguments [0..4] = the contents in address (uint32_t)ebp +2 [0..4]
+      *    (3.3) cprintf("\n");
+      *    (3.4) call print_debuginfo(eip-1) to print the C calling function name and line number, etc.
+      *    (3.5) popup a calling stackframe
+      *           NOTICE: the calling funciton's return addr eip  = ss:[ebp+4]
+      *                   the calling funciton's ebp = ss:[ebp]
+      */
+
+    // 读取ebp和eip
+    uint32_t ebp = read_ebp(), eip = read_eip();
+    
+    int i, j;
+
+    // 遍历栈
+    for (i = 0; ebp != 0 && i < STACKFRAME_DEPTH; i ++) {
+        
+        // 打印 ebp eip
+        cprintf("ebp:0x%08x eip:0x%08x args:", ebp, eip);
+        
+        // 打应参数
+        uint32_t *args = (uint32_t *)ebp + 2;
+        for (j = 0; j < 4; j ++) {
+            cprintf("0x%08x ", args[j]);
+        }
+        cprintf("\n");
+        print_debuginfo(eip - 1);
+
+        // 切换栈信息, 需要注意的是栈是由高地址到低地址延伸的
+        eip = ((uint32_t *)ebp)[1];
+        ebp = ((uint32_t *)ebp)[0];
+    }
+}
+```
+
+
+## 练习 6：完善中断初始化和处理
+
+### 练习内容
+
+![](/images/ucore操作系统实验：lab1_image_22.png)
+
+### 问题解答
+
+**问题 1：中断描述符表（也可简称为保护模式下的中断向量表）中一个表项占多少字节？其中哪几位代表中断处理代码的入口？**
+
+ucore 里的中断描述符定义在 `kern/mm/mmu.h` 中，总共占用 64 位，即 8 字节。
+
+```c
+/* Gate descriptors for interrupts and traps */
+struct gatedesc {
+    unsigned gd_off_15_0 : 16;        // low 16 bits of offset in segment
+    unsigned gd_ss : 16;            // segment selector
+    unsigned gd_args : 5;            // # args, 0 for interrupt/trap gates
+    unsigned gd_rsv1 : 3;            // reserved(should be zero I guess)
+    unsigned gd_type : 4;            // type(STS_{TG,IG32,TG32})
+    unsigned gd_s : 1;                // must be 0 (system)
+    unsigned gd_dpl : 2;            // descriptor(meaning new) privilege level
+    unsigned gd_p : 1;                // Present
+    unsigned gd_off_31_16 : 16;        // high bits of offset in segment
+};
+```
+
+根据代码中的注释，第 1-16 位与 48-64 位构成段偏移，第 17-32 位为段选择子，两者联合可计算出入口地址。
+
+**问题 2：请编程完善 kern/trap/trap.c 中对中断向量表进行初始化的函数 idt_init**
+
+```c
+/* idt_init - initialize IDT to each of the entry points in kern/trap/vectors.S */
+
+void
+idt_init(void) {
+
+     /* LAB1 YOUR CODE : STEP 2 */
+     /* (1) Where are the entry addrs of each Interrupt Service Routine (ISR)?
+      *     All ISR's entry addrs are stored in __vectors. where is uintptr_t __vectors[] ?
+      *     __vectors[] is in kern/trap/vector.S which is produced by tools/vector.c
+      *     (try "make" command in lab1, then you will find vector.S in kern/trap DIR)
+      *     You can use  "extern uintptr_t __vectors[];" to define this extern variable which will be used later.
+      * (2) Now you should setup the entries of ISR in Interrupt Description Table (IDT).
+      *     Can you see idt[256] in this file? Yes, it's IDT! you can use SETGATE macro to setup each item of IDT
+      * (3) After setup the contents of IDT, you will let CPU know where is the IDT by using 'lidt' instruction.
+      *     You don't know the meaning of this instruction? just google it! and check the libs/x86.h to know more.
+      *     Notice: the argument of lidt is idt_pd. try to find it!
+      */
+
+    extern uintptr_t __vectors[];
+    int i;
+    for (i = 0; i < sizeof(idt) / sizeof(struct gatedesc); i ++) {
+        SETGATE(idt[i], 0, GD_KTEXT, __vectors[i], DPL_KERNEL);
+    }
+
+    // set for switch from user to kernel
+    SETGATE(idt[T_SWITCH_TOK], 0, GD_KTEXT, __vectors[T_SWITCH_TOK], DPL_USER);
+
+    // load the IDT
+    lidt(&idt_pd);
+}
+```
